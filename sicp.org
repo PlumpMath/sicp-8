@@ -1,0 +1,2072 @@
+* Chapter 1
+** Exercise 1.1
+#+BEGIN_SRC scheme
+  10 ; 10
+  (+ 5 3 4) ; 12
+  (- 9 1) ; 8
+  (/ 6 2) ; 3
+  (+ (* 2 4) (- 4 6)) ; 6
+  (define a 3) ;
+  (define b (+ a 1)) ;
+  (+ a b (* a b)) ; 16
+  (= a b) ; #f
+  (if (and (> b a) (< b (* a b)))
+      b
+      a) ; 4
+  (cond ((= a 4) 6)
+        ((= b 4) (+ 6 7 a))
+        (else 25)) ; 16
+  (+ 2 (if (> b a) b a)) ; 6
+  (* (cond ((> a b) a)
+           ((< a b) b)
+           (else -1))
+     (+ a 1)) ; 16
+#+END_SRC
+** Exercise 1.2
+#+BEGIN_SRC scheme
+(/ (+ 5 4 (- 2 (- 3 (-6 (/ 4 5))))) (* 3 (- 6 2) (- 2 7)))
+#+END_SRC
+** Exercise 1.3
+#+BEGIN_SRC scheme
+  (define (sum-larger-squares a b c)
+    (define (square a) (* a a))
+    (define (sum-squares a b) (+ (square a) (square b)))
+    (cond ((and (> a c) (> b c)) (sum-squares a b))
+          ((and (> b a) (> c a)) (sum-squares b c))
+          (else (sum-squares a c))))
+#+END_SRC
+** Exercise 1.4
+The expression =((if (> b 0) + -) a b)= will evaluate to =(+ a b)= if
+b is positive, and =(- a b)= otherwise.
+** Exercise 1.5
+Applicative-order interpreters must evaluate the arguments of =(test 0
+(p))= before it can be expanded. =(p)= just evaluates to =(p)=, so
+=(test 0 (p))= is replaced with =(test 0 (p))=
+again. Applicative-order interpreters will never finish evaluating the
+expression, since they will just keep attempting to evaluate before
+expanding.
+
+Normal-order interpreters will expand the expression as much as
+possible before beginning to reduce it. So they will expand =(test 0
+(p))= to =(if (= 0 0) 0 (p))=, then reduce it to =(if #t 0 (p))=, then to =0=.
+** Exercise 1.6
+Applicative-order evaluators can never stop evaluating the expression
+#+BEGIN_SRC scheme
+  (define (sqrt-iter guess x)
+    (new-if (good-enough? guess x)
+            guess
+            (sqrt-iter (improve guess x) x)))
+#+END_SRC
+=new-if= isn't a special form, so all its arguments will be evaluated
+before expansion to its definition in terms of =cond=. Since one of
+its arguments is a recursive call to =sqrt-iter=, the evaluation will
+never stop.
+** Exercise 1.7
+The =good-enough?= test will be less effective for small numbers
+because the acceptable error, 0.001, is large relative to small
+numbers.
+
+The test will be ineffective (or fail entirely) for large numbers with
+limited precision, because a large number =x= +/- 0.001 is still =x=
+at low enough precision.
+
+A =good-enough?= function using fractions of the guess instead of a
+constant to determine when to stop:
+
+#+BEGIN_SRC scheme
+  (define (good-enough? guess x)
+    (< (abs (- (square guess) x)) (/ x 1000)))
+#+END_SRC
+
+The new =sqrt-iter= performs much better on small numbers:
+
+#+BEGIN_EXAMPLE
+   (old-sqrt-iter 1 0.001)
+=> 0.04124542607499115
+   (sqrt-iter 1 0.001)
+=> 0.03162278245070105
+#+END_EXAMPLE
+
+And on large numbers:
+
+#+BEGIN_EXAMPLE
+   (sqrt-iter 1 1000000000000000)
+=> 31635794.320938785
+   (old-sqrt-iter 1 1000000000000000)
+=> <loops forever>
+#+END_EXAMPLE
+** Exercise 1.8
+#+BEGIN_SRC scheme
+  (define (good-enough-cuberoot? guess x)
+      (< (abs (- (* guess guess guess) x)) (/ x 1000)))
+  
+  (define (improve-cuberoot guess x)
+    (/ (+ (/ x (* guess guess)) (* 2 guess)) 3))
+  
+  (define (cube-root-iter guess x)
+    (if (good-enough-cuberoot? guess x)
+        guess
+        (cube-root-iter (improve-cuberoot guess x) x)))
+  
+  (define (cube-root x)
+    (cube-root-iter 1.0 x))
+#+END_SRC
+** Exercise 1.9
+The first process is recursive, the second iterative.
+** Exercise 1.10
+=f= computes 2n, =g= computes 2^n, and =h= computes $2^{2^{2^{2\cdots}}}$,
+where the total number of 2s in the expression is n. (2 squared,
+(n - 1) times)
+** Exercise 1.11
+#+BEGIN_SRC scheme
+  (define (f-recursive n)
+    (cond ((< n 3) n)
+          (else (+ (f-recursive (- n 1))
+                   (* 2 (f-recursive (- n 2)))
+                   (* 3 (f-recursive (- n 3)))))))
+  
+  (define (f-iterative n)
+    (define (f a b c d)
+      (cond ((= a 2) b)
+            ((< a 2) a)
+            (else (f (- a 1) (+ b (* 2 c) (* 3 d)) b c))))
+    (f n 2 1 0))
+#+END_SRC
+** Exercise 1.12
+#+BEGIN_SRC scheme
+  ; 0-based indexing
+  (define (pascal row col)
+    (if (or (= col 0) (= col row))
+        1
+        (+ (pascal (- row 1) col) (pascal (- row 1) (- col 1)))))
+#+END_SRC
+** Exercise 1.13 (NOT DONE)
+Basis:
+
+When $n = 0$, \( \frac{\varphi^n - \psi^n}{\sqrt{5}} = 0 \).
+
+When $n = 1$, \( \frac{\varphi^n - \psi^n}{\sqrt{5}} = \frac{\sqrt{5}}{\sqrt{5}} = 1 \).
+
+Induction on $n$:
+
+If \( \mathrm{Fib}(n) = \frac{\varphi^n - \psi^n}{\sqrt{5}}\), then \( \frac{\varphi^n - \psi^n}{\sqrt{5}} = \frac{\varphi^{n - 1} - \psi^{n - 1}}{\sqrt{5}} + \frac{\varphi^{n - 2} - \psi^{n - 2}}{\sqrt{5}} \)
+** Exercise 1.14
+Growth in size for =count-change=: \( \Theta(n) = n\). (The maximum
+depth in the tree is always (?) reached when subtracting pennies,
+which of course is done O(n) times.)
+
+Growth in steps for =count-change=: \( \Theta(n) = n^5\).
+** Exercise 1.15
+*** 1.15a
+Found using:
+#+BEGIN_SRC scheme
+  (define (p x) (display "hello\n"))
+  (define (sine angle)
+    (if (not (> (abs angle) 0.1))
+        angle
+        (p (sine (/ angle 3.0)))))
+#+END_SRC
+5 times.
+*** 1.15b
+Growth in size: \( \Theta(n) = \log n \).
+
+Growth in steps: \( \Theta(n) = \log n \).
+** Exercise 1.16
+#+BEGIN_SRC scheme
+  (define (even? n)
+    (= (remainder n 2) 0))
+  ; only works for positive numbers
+  (define (expt b n)
+    (expt-iter 1 b n))
+  (define (expt-iter a b n)
+    (cond ((= n 0) a)
+          ((even? n) (expt-iter a (square b) (/ n 2)))
+          (else (expt-iter (* a b) b (- n 1)))))
+#+END_SRC
+** Exercise 1.17
+#+BEGIN_SRC scheme
+  (define (even? n)
+    (= (remainder n 2) 0))
+  (define (double x) (* x 2))
+  (define (halve x) (/ x 2))
+  (define (fast-mult x n)
+    (cond ((= n 0) 0)
+          ((= n 1) x)
+          ((even? n) (fast-mult (double x) (halve n)))
+          (else (+ x (fast-mult x (- n 1))))))
+#+END_SRC
+** Exercise 1.18
+oops, 1.17 is logarithmic
+** Exercise 1.19
+a'' <- b'q + a'q + a'p
+
+a'' <- q(bp + aq) + q(bq + aq + ap) + p(bq + aq + ap)
+
+a'' <- bpq + aq^2 + bq^2 + aq^2 + apq + bqp + apq + ap^2
+
+a'' <- b(2pq + q^2) + a(p^2 + q^2) + a(q^2 + 2pq)
+
+b'' <- b'p + a'q
+
+b'' <- p(bp + aq) + q(bq + aq + ap)
+
+b'' <- bp^2 + aqp + bq^2 + aq^2 + apq
+
+b'' <- b(p^2 + q^2) + a(2pq + q^2)
+
+q' = q^2 + 2pq
+
+p' = p^2 + q^2
+
+#+BEGIN_SRC scheme
+  (define (fib n)
+    (fib-iter 1 0 0 1 n))
+  (define (fib-iter a b p q count)
+    (cond ((= count 0) b)
+          ((even? count)
+           (fib-iter a
+                     b
+                     (+ (* q q) (* p p))
+                     (+ (* q q) (* 2 p q))
+                     (/ count 2)))
+          (else (fib-iter (+ (* b q) (* a q) (* a p))
+                          (+ (* b p) (* a q))
+                          p
+                          q
+                          (- count 1)))))
+#+END_SRC
+** Exercise 1.20
+#+BEGIN_SRC scheme
+    (gcd 206 40)
+    
+    ((if (= 40 0)
+         206
+         (gcd 40 (remainder 206 40))))
+    
+    ((if #f
+         206
+         (gcd 40 (remainder 206 40))))
+    
+    (gcd 40 (remainder 206 40))
+    
+    (if (= (remainder 206 40) 0)
+        40
+        (gcd (remainder 206 40) (remainder 40 (remainder 206 40))))
+    
+    (if (= 6 0) ; evaluated remainder
+        40
+        (gcd (remainder 206 40) (remainder 40 (remainder 206 40))))
+    
+    (if #f
+        40
+        (gcd (remainder 206 40) (remainder 40 (remainder 206 40))))
+    
+    (gcd (remainder 206 40) (remainder 40 (remainder 206 40)))
+    
+    (if (= (remainder 40 (remainder 206 40)) 0)
+        (remainder 206 40)
+        (gcd (remainder 40 (remainder 206 40)) (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))))
+    
+    (if (= 4 0) ; evaluated 2 remainders
+        (remainder 206 40)
+        (gcd (remainder 40 (remainder 206 40)) (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))))
+    
+    (if #f
+        (remainder 206 40)
+        (gcd (remainder 40 (remainder 206 40)) (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))))
+    
+    (gcd (remainder 40 (remainder 206 40)) (remainder (remainder 206 40) (remainder 40 (remainder 206 40))))
+    
+    (if (= (remainder (remainder 206 40) (remainder 40 (remainder 206 40))) 0)
+        (remainder 40 (remainder 206 40))
+        (gcd (remainder (remainder 206 40) (remainder 40 (remainder 206 40))) (remainder (remainder 40 (remainder 206 40)) (remainder (remainder 206 40) (remainder 40 (remainder 206 40))))))
+    
+    (if (= 2 0) ; evaluated 4 remainders
+        (remainder 40 (remainder 206 40))
+        (gcd (remainder (remainder 206 40) (remainder 40 (remainder 206 40))) (remainder (remainder 40 (remainder 206 40)) (remainder (remainder 206 40) (remainder 40 (remainder 206 40))))))
+    
+    (if #f
+        (remainder 40 (remainder 206 40))
+        (gcd (remainder (remainder 206 40) (remainder 40 (remainder 206 40))) (remainder (remainder 40 (remainder 206 40)) (remainder (remainder 206 40) (remainder 40 (remainder 206 40))))))
+    
+    (gcd (remainder (remainder 206 40) (remainder 40 (remainder 206 40))) (remainder (remainder 40 (remainder 206 40)) (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))))
+    
+    (if (= (remainder (remainder 40 (remainder 206 40)) (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))) 0)
+        (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))
+        (gcd (remainder (remainder 40 (remainder 206 40))
+                        (remainder (remainder 206 40)
+                                   (remainder 40 (remainder 206 40))))
+             (remainder (remainder (remainder 206 40)
+                                   (remainder 40 (remainder 206 40)))
+                        (remainder (remainder 40 (remainder 206 40))
+                                   (remainder (remainder 206 40)
+                                              (remainder 40 (remainder 206 40)))))))
+    
+    (if (= 0 0) ; evaluated 7 remainders
+        (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))
+        (gcd (remainder (remainder 40 (remainder 206 40))
+                        (remainder (remainder 206 40) (remainder 40 (remainder 206 40))))
+             (remainder (remainder (remainder 206 40)
+                                   (remainder 40 (remainder 206 40)))
+                        (remainder (remainder 40 (remainder 206 40))
+                                   (remainder (remainder 206 40)
+                                              (remainder 40 (remainder 206 40)))))))
+    
+    (if #t
+        (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))
+        (gcd (remainder (remainder 40 (remainder 206 40)) (remainder (remainder 206 40) (remainder 40 (remainder 206 40))))
+             (remainder (remainder (remainder 206 40)
+                                   (remainder 40 (remainder 206 40)))
+                        (remainder (remainder 40 (remainder 206 40))
+                                   (remainder (remainder 206 40)
+                                              (remainder 40 (remainder 206 40)))))))
+    
+    (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))
+    
+    2 ; evaluated 4 remainders
+#+END_SRC
+
+A normal-order evaluator will perform 18 =remainder= operations. An
+applicative-order evaluator will only perform 4.
+** Exercise 1.21
+#+BEGIN_SRC scheme
+  (smallest-divisor 199) ; 199
+  (smallest-divisor 1999) ; 1999
+  (smallest-divisor 19999) ; 7
+#+END_SRC
+** Exercise 1.22
+#+BEGIN_SRC scheme
+  (define (smallest-divisor n) (find-divisor n 2))
+  (define (find-divisor n test-divisor)
+  (cond ((> (square test-divisor) n) n)
+  ((divides? test-divisor n) test-divisor)
+  (else (find-divisor n (+ test-divisor 1)))))
+  (define (divides? a b) (= (remainder b a) 0))
+  (define (prime? n)
+  (= n (smallest-divisor n)))
+  (define (timed-prime-test n)
+    (newline) (display n) (start-prime-test n (runtime)))
+  (define (start-prime-test n start-time)
+    (if (prime? n)
+        (report-prime (- (runtime) start-time))))
+  (define (report-prime elapsed-time)
+    (display " *** ") (display elapsed-time))
+  (define (search-for-primes start stop)
+    (define (iter start stop cur)
+      (cond ((> cur stop) (display "done"))
+            (else (timed-prime-test cur)
+                  (iter start stop (+ cur 2)))))
+    (cond ((= (remainder start 2) 0) (iter start stop (+ start 1)))
+          (else (iter start stop start))))
+  
+#+END_SRC
+
+#+BEGIN_EXAMPLE
+  (search-for-primes 1000 1020)
+  
+  1009 *** 0
+  1011
+  1013 *** 0
+  1015
+  1017
+  1019 *** 0
+  
+  (search-for-primes 10000 10050)
+  
+  10001
+  10003
+  10005
+  10007 *** 0
+  10009 *** 0
+  10011
+  10013
+  10015
+  10017
+  10019
+  10021
+  10023
+  10025
+  10027
+  10029
+  10031
+  10033
+  10035
+  10037 *** 0
+  
+  (search-for-primes 100000 100075)
+  
+  100001
+  100003 *** 0
+  100005
+  100007
+  100009
+  100011
+  100013
+  100015
+  100017
+  100019 *** 0
+  100021
+  100023
+  100025
+  100027
+  100029
+  100031
+  100033
+  100035
+  100037
+  100039
+  100041
+  100043 *** 0
+  
+  (search-for-primes 1000000 1000050)
+  
+  1000001
+  1000003 *** 0
+  1000005
+  1000007
+  1000009
+  1000011
+  1000013
+  1000015
+  1000017
+  1000019
+  1000021
+  1000023
+  1000025
+  1000027
+  1000029
+  1000031
+  1000033 *** 0
+  1000035
+  1000037 *** 0
+  
+#+END_EXAMPLE
+
+The stars mark the first 3 primes above 1000, 10000, 100000, and
+1000000, but to time the procedure properly, we have to apply it to
+much larger numbers.
+
+#+BEGIN_EXAMPLE
+  (search-for-primes 1000000000000 1000000000100)
+  
+  1000000000039 *** 200000000
+  1000000000061 *** 200000000
+  1000000000063 *** 200000000
+  1000000000091 *** 200000000
+  
+  (search-for-primes 10000000000000 10000000000100)
+  
+  10000000000037 *** 630000000
+  10000000000051 *** 630000000
+  10000000000099 *** 620000000
+  
+  (search-for-primes 100000000000000 100000000000100)
+  
+  100000000000031 *** 1990000000
+  100000000000067 *** 1990000000
+  100000000000097 *** 2010000000
+  100000000000099 *** 1990000000
+    
+  (search-for-primes 1000000000000000 1000000000000100)
+    
+  1000000000000037 *** 6300000000
+  1000000000000091 *** 6290000000
+    
+#+END_EXAMPLE
+Each 10x increase in the size of the numbers tested gives a ~6x, ~3x,
+and ~3x increase, respectively, in the time taken to test their
+primality. Since $\sqrt{10} \approx 3.16$, the timing fits roughly
+within the $\Theta(\sqrt{n})$ prediction.
+** Exercise 1.23
+#+BEGIN_SRC scheme
+  (define (next x)
+    (if (= x 2)
+        3
+        (+ x 2)))
+  (define (smallest-divisor n) (find-divisor n 2))
+  (define (find-divisor n test-divisor)
+    (cond ((> (square test-divisor) n) n)
+          ((divides? test-divisor n) test-divisor)
+          (else (find-divisor n (next test-divisor)))))
+  (define (divides? a b) (= (remainder b a) 0))
+#+END_SRC
+
+#+BEGIN_EXAMPLE
+  (search-for-primes 1000000000000 1000000000100)
+  1000000000039 *** 130000000
+  1000000000061 *** 120000000
+  1000000000063 *** 120000000
+  
+  (search-for-primes 10000000000000 10000000000100)
+  10000000000037 *** 390000000
+  10000000000051 *** 380000000
+  10000000000099 *** 380000000
+  
+  (search-for-primes 100000000000000 100000000000100)
+  
+  100000000000031 *** 1230000000
+  100000000000067 *** 1200000000
+  100000000000097 *** 1190000000
+  100000000000099 *** 1230000000
+  
+  (search-for-primes 1000000000000000 1000000000000100)
+  
+  1000000000000037 *** 3920000000
+  1000000000000091 *** 3850000000
+#+END_EXAMPLE
+Yes, it reduces the running time by a little less than half (because
+of overhead outside =smallest-divisor=). Duh.
+** Exercise 1.24 (NOT DONE)
+** Exercise 1.25
+This version of the =expmod= procedure will return the correct result,
+but is much slower for large numbers than the original version of
+=expmod=. The original version is much faster because it takes the
+remainder modulo $m$ at each step, limiting the size of the numbers
+being dealt with to no larger than $m$.
+** Exercise 1.26
+Since the interpreter uses applicative-order evaluation, it only
+evaluates the argument of =(square (expmod base (/ exp 2) m))= once.
+When evaluating =(* (expmod base (/ exp 2) m) (expmod base (/ exp 2)
+m))=, on the other hand, both arguments are evaluated independently of
+one another, which makes the process $\Theta(n)$.
+** Exercise 1.27
+#+BEGIN_SRC scheme
+  (define (carmichael-test n)
+    (define (do-it cur)
+      (if (= cur n)
+          #t
+          (if (= (expmod cur n n) cur)
+              (do-it (+ cur 1))
+              #f)))
+    (do-it 1))
+#+END_SRC
+#+BEGIN_EXAMPLE
+(carmichael-test 561)
+#t
+(carmichael-test 1105)
+#t
+(carmichael-test 1729)
+#t
+(carmichael-test 2465)
+#t
+(carmichael-test 2821)
+#t
+(carmichael-test 6601)
+#t
+#+END_EXAMPLE
+** Exercise 1.28
+#+BEGIN_SRC scheme
+  (define (remainder-and-check x n)
+    ; sqrt still won't get run that often, so this isn't too bad
+    (if (and (= (remainder x n) 1) (not (= (- n 1) (sqrt x))) (not (= x 1)))
+        0
+        (remainder x n)))
+  
+  (define (expmod base exp m)
+    (cond ((= exp 0)
+           1)
+          ((even? exp)
+           (remainder-and-check
+            (square
+             (expmod base (/ exp 2) m))
+            m))
+          (else
+           (remainder
+            (* base
+               (expmod base (- exp 1) m))
+            m))))
+  
+  (define (miller-rabin-test n)
+    (define (try-it a)
+      (= (expmod a (- n 1) n) 1))
+    (try-it (+ 1 (random (- n 1)))))
+#+END_SRC
+
+#+BEGIN_EXAMPLE
+  (miller-rabin-test 561)
+  $73 = #f
+  (miller-rabin-test 1105)
+  $74 = #f
+  (miller-rabin-test 1729)
+  $75 = #f
+  (miller-rabin-test 2465)
+  $76 = #f
+  (miller-rabin-test 2821)
+  $77 = #f
+  (miller-rabin-test 6601)
+  $78 = #f
+  (miller-rabin-test 2)
+  $79 = #t
+  (miller-rabin-test 5)
+  $80 = #t
+  (miller-rabin-test 29)
+  $81 = #t
+#+END_EXAMPLE
+** Exercise 1.29
+#+BEGIN_SRC scheme
+  (define (simpsons-rule f a b n)
+    (define (term x)
+      (*
+       (cond ((or (= x a) (= x b)) 1)
+             ((even? (/ (* x n) (- b a))) 2)
+             (else 4))
+       (f x)))
+    (define (next x)
+      (+ x (/ (- b a) n)))
+    (* (/ (- b a) (* n 3)) (sum term a next b)))
+#+END_SRC
+
+#+BEGIN_EXAMPLE
+  (simpsons-rule cube 0 1 100)
+  $20 = 1/4
+  (simpsons-rule cube 0 1 1000)
+  $21 = 1/4
+#+END_EXAMPLE
+** Exercise 1.30
+#+BEGIN_SRC scheme
+  (define (sum term a next b)
+    (define (iter a result)
+      (if (> a b)
+          result
+          (iter (next a) (+ result (term a)))))
+    (iter a 0))
+#+END_SRC
+** Exercise 1.31
+*** 1.31a
+#+BEGIN_SRC scheme
+  (define (product term a next b)
+    (define (iter x result)
+      (if (> x b)
+          result
+          (iter (next x) (* result (term x)))))
+    (iter a 1))
+  
+  (define (factorial n)
+    (product identity 1 inc n))
+  
+  (define (pi-approx n)
+    (define (term x)
+      (if (even? x)
+          (/ (+ x 2) (+ x 1))
+          (/ (+ x 1) (+ x 2))))
+      (* 4 (product term 1 inc n)))
+#+END_SRC
+*** 1.31b
+#+BEGIN_SRC scheme
+  (define (product term a next b)
+    (if (> a b)
+        1
+        (* (term a) (product term (next a) next b))))
+#+END_SRC
+** Exercise 1.32
+*** 1.32a
+#+BEGIN_SRC scheme
+  (define (accumulate combiner null-value term a next b)
+    (define (iter x result)
+      (if (> x b)
+          result
+          (iter (next x) (combiner result (term x)))))
+    (iter a null-value))
+  
+  (define (sum term a next b)
+    (accumulate + 0 term a next b))
+  
+  (define (product term a next b)
+    (accumulate * 1 term a next b))
+#+END_SRC
+*** 1.32b
+#+BEGIN_SRC scheme
+  (define (accumulate combiner null-value term a next b)
+    (if (> a b)
+        null-value
+        (combiner (term a) (accumulate combiner null-value term (next a) next b))))
+#+END_SRC
+** Exercise 1.33
+#+BEGIN_SRC scheme
+  (define (filtered-accumulate filter combiner null-value term a next b)
+      (define (iter x result)
+        (cond ((> x b) result)
+              ((filter x) (iter (next x) (combiner result (term x))))
+              (else (iter (next x) (combiner result null-value)))))
+      (iter a null-value))
+#+END_SRC
+*** 1.33a
+#+BEGIN_SRC scheme
+  (define (sum-squares-primes a b)
+    (filtered-accumulate prime? + 0 square a inc b))
+#+END_SRC
+*** 1.33b
+#+BEGIN_SRC scheme
+  (define (prod-coprimes n)
+    (define (coprime? x)
+      (= (gcd x n) 1))
+    (filtered-accumulate coprime? * 1 identity 1 inc (- n 1)))
+#+END_SRC
+** Exercise 1.34
+This will eventually expand to =(2 2)=, which will cause an error
+because 2 isn't a procedure.
+** Exercise 1.35
+$\varphi^2 = \varphi + 1$
+
+$\varphi = 1 + 1/\varphi$
+
+So \phi is the fixed point of $x \mapsto 1 + 1/x$.
+
+#+BEGIN_EXAMPLE
+  (fixed-point (lambda (x) (+ 1 (/ 1 x))) 1)
+  $10 = 987/610
+#+END_EXAMPLE
+** Exercise 1.36
+#+BEGIN_SRC scheme
+  (define tolerance 0.00001)
+  (define (fixed-point f first-guess)
+    (define (close-enough? v1 v2)
+      (< (abs (- v1 v2))
+         tolerance))
+    (define (try guess)
+      (let ((next (f guess)))
+        (display next)
+        (newline)
+        (if (close-enough? guess next)
+            next
+            (try next))))
+    (try first-guess))
+#+END_SRC
+#+BEGIN_EXAMPLE
+  (fixed-point (lambda (x) (/ (log 1000) (log x))) 1.1)
+  72.47657378429035
+  1.6127318474109593
+  14.45350138636525
+  2.5862669415385087
+  7.269672273367045
+  3.4822383620848467
+  5.536500810236703
+  4.036406406288111
+  4.95053682041456
+  4.318707390180805
+  4.721778787145103
+  4.450341068884912
+  4.626821434106115
+  4.509360945293209
+  4.586349500915509
+  4.535372639594589
+  4.568901484845316
+  4.546751100777536
+  4.561341971741742
+  4.551712230641226
+  4.558059671677587
+  4.55387226495538
+  4.556633177654167
+  4.554812144696459
+  4.556012967736543
+  4.555220997683307
+  4.555743265552239
+  4.555398830243649
+  4.555625974816275
+  4.555476175432173
+  4.555574964557791
+  4.555509814636753
+  4.555552779647764
+  4.555524444961165
+  4.555543131130589
+  4.555530807938518
+  4.555538934848503
+  (fixed-point (lambda (x) (average x (/ (log 1000) (log x)))) 1.1)
+  36.78828689214517
+  19.352175531882512
+  10.84183367957568
+  6.870048352141772
+  5.227224961967156
+  4.701960195159289
+  4.582196773201124
+  4.560134229703681
+  4.5563204194309606
+  4.555669361784037
+  4.555558462975639
+  4.55553957996306
+  4.555536364911781
+#+END_EXAMPLE
+The process takes 37 steps without average-damping, but only 13 steps
+with average-damping.
+** Exercise 1.37
+*** 1.37a
+#+BEGIN_SRC scheme
+  (define (cont-frac n d k)
+    (define (recurse i)
+      (if (= i k)
+          0
+          (/ (n i) (+ (d i) (recurse (+ i 1))))))
+    (recurse 0))
+#+END_SRC
+=k= must be greater than or equal to 12 to produce an approximation
+good to 4 decimal places.
+*** 1.37b
+#+BEGIN_SRC scheme
+  (define (cont-frac n d k)
+    (define (iter i result)
+      (if (= i 0)
+          result
+          (iter (- i 1) (/ (n i) (+ (d i) result)))))
+    (iter k 0))
+#+END_SRC
+** Exercise 1.38
+#+BEGIN_SRC scheme
+  (define (euler-approx n)
+    (+ 2 (cont-frac (lambda (i) 1)
+                    (lambda (i) (if (= (remainder (+ i 1) 3) 0)
+                                    (* 2 (/ (+ i 1) 3))
+                                    1))
+                    n)))
+#+END_SRC
+** Exercise 1.39
+#+BEGIN_SRC scheme
+  (define (tan-cf x k)
+    (cont-frac (lambda (i)
+                 (if (= i 1)
+                     x
+                     (- (square x))))
+               (lambda (i)
+                 (+ (* 2 (- i 1)) 1))
+               k))
+#+END_SRC
+** Exercise 1.40
+#+BEGIN_SRC scheme
+  (define (cubic a b c)
+    (lambda (x) (+ (cube x)
+                   (* a (square x))
+                   (* b x)
+                   c)))
+#+END_SRC
+** Exercise 1.41
+#+BEGIN_SRC scheme
+  (define (double f)
+    (lambda (x) (f (f x))))
+#+END_SRC
+#+BEGIN_EXAMPLE
+  (((double (double double)) inc) 5)
+  $49 = 21
+#+END_EXAMPLE
+** Exercise 1.42
+#+BEGIN_SRC scheme
+  (define (compose f g)
+    (lambda (x) (f (g x))))
+#+END_SRC
+** Exercise 1.43
+#+BEGIN_SRC scheme
+  (define (repeated f n)
+    (if (= n 1)
+        f
+        (compose f (repeated f (- n 1)))))
+#+END_SRC
+** Exercise 1.44
+#+BEGIN_SRC scheme
+  (define (smooth f)
+    (define (average x y z)
+      (/ (+ x y z) 3))
+    (lambda (x) (average (f (- x dx)) (f x) (f (+ x dx)))))
+  (define (repeated-smooth f n)
+    (lambda (x) (((repeated smooth n) f) x)))
+#+END_SRC
+** Exercise 1.45
+- Average damps needed for 3rd roots: 1
+- Average damps needed for 4th roots: 2
+- Average damps needed for 8th roots: 3
+- Average damps needed for 16th roots: 4
+
+There are about $\log_2(n)$ average damps needed to compute the fixed
+point of $y \mapsto x/y^{n-1}$.
+
+#+BEGIN_SRC scheme
+  (define (nth-root n)
+    ; rounded log base 2
+    (define (log2 x)
+      (round (/ (log x) (log 2))))
+    (lambda (x) (fixed-point ((repeated average-damp (log2 n))
+                              (lambda (y) (/ x (expt y (- n 1)))))
+                             1.0)))
+#+END_SRC
+** Exercise 1.46
+#+BEGIN_SRC scheme
+  (define (iterative-improve good-enough? improve)
+    (lambda (guess) (define (iter x)
+                      (if (good-enough? x)
+                          x
+                          (iter (improve x))))
+            (iter guess)))
+  
+  (define (sqrt x)
+      ((iterative-improve (lambda (guess) (< (abs (- (square guess) x)) 0.001))
+                          (lambda (guess) (average guess (/ x guess))))
+       x))
+  
+  (define (fixed-point f first-guess)
+    ((iterative-improve (lambda (guess)
+                          (< (abs (- (f guess) guess)) 0.0001))
+                        (lambda (guess)
+                          (f guess)))
+     first-guess))
+#+END_SRC
+* Chapter 2
+** Exercise 2.1
+#+BEGIN_SRC scheme
+  (define (make-rat n d)
+    (let ((g (gcd n d))
+          (n (cond ((and (< d 0) (< n 0)) (- n))
+                   ((< d 0) (- n))
+                   (else n)))
+          (d (if (< d 0) (- d) d)))
+      (cons (/ n g) (/ d g))))
+#+END_SRC
+** Exercise 2.2
+#+BEGIN_SRC scheme
+  (define (make-segment start end)
+    (cons start end))
+  
+  (define (start-segment seg)
+    (car seg))
+  
+  (define (end-segment seg)
+    (cdr seg))
+  
+  (define (make-point x y)
+    (cons x y))
+  
+  (define (x-point p)
+    (car p))
+  
+  (define (y-point p)
+    (cdr p))
+  
+  (define (midpoint-segment seg)
+    (let ((start (start-segment seg))
+          (end (end-segment seg)))
+      (make-point (average (x-point start) (x-point end))
+                  (average (y-point start) (y-point end)))))
+#+END_SRC
+** Exercise 2.3
+#+BEGIN_SRC scheme
+  (define (make-rect top-seg left-seg)
+    (cons top-seg left-seg))
+  
+  (define (top-seg-rect r)
+    (car r))
+  
+  (define (left-seg-rect r)
+    (cdr r))
+  
+  (define (length-segment seg)
+    (sqrt (+
+           (square (- (x-point (start-segment seg))
+                      (x-point (end-segment seg))))
+           (square (- (y-point (start-segment seg))
+                      (y-point (end-segment seg)))))))
+  
+  (define (perimeter-rect r)
+    (* 2 (+ (length-segment (top-seg-rect r))
+            (length-segment (left-seg-rect r)))))
+  
+  (define (area-rect r)
+    (* (length-segment (top-seg-rect r))
+       (length-segment (left-seg-rect r))))
+#+END_SRC
+The order that the segments are stored in does not matter:
+#+BEGIN_SRC scheme
+  (define (make-rect top-seg left-seg)
+    (cons left-seg top-seg))
+  
+  (define (top-seg-rect r)
+    (cdr r))
+  
+  (define (left-seg-rect r)
+    (car r))
+#+END_SRC
+And similarly, for any rectangle we can define a "top" and "left"
+edge. So regardless of how a rectangle is implemented or constructed,
+the =top-seg-rect= and =left-seg-rect= selectors can be defined. For
+example, a rectangle that is constructed using a procedure =(make-rect
+origin length1 length2 angle)= can still define additional selectors
+for the top and left segments, even though they aren't part of the
+underlying data structure.
+** Exercise 2.4
+#+BEGIN_SRC scheme
+  (car (cons x y))
+  (car (lambda (m) (m x y)))
+  ((lambda (m) (m x y)) (lambda (p q) p))
+  ((lambda (p q) p) x y)
+  x
+#+END_SRC
+#+BEGIN_SRC scheme
+  (define (cdr z)
+    (z (lambda (x y) y)))
+#+END_SRC
+** Exercise 2.5
+All integers have a unique prime factorization, so we can recover $a$
+and $b$ from any integer that has the form $2^a3^b$.
+#+BEGIN_SRC scheme
+  (define (cons x y)
+    (* (expt 2 x) (expt 3 y)))
+  
+  ; probably a more efficient way to do this...
+  (define (factor-iter divisor num times)
+    (if (= (remainder num divisor) 0)
+        (factor-iter divisor (/ num divisor) (+ times 1))
+        times))
+  
+  (define (car p)
+    (factor-iter 2 p 0))
+  
+  (define (cdr p)
+    (factor-iter 3 p 0))
+#+END_SRC
+** Exercise 2.6
+Evaluating =(add-1 zero)= using the substitution model gives:
+#+BEGIN_SRC scheme
+  ((lambda (f) (lambda (x) (f ((n f) x)))) (lambda (y) (lambda (z) z)))
+  (lambda (f) (lambda (x) (f (((lambda (y) (lambda (z) z)) f) x))))
+  (lambda (f) (lambda (x) (f ((lambda (z) z) x))))
+  (lambda (f) (lambda (x) (f x)))
+#+END_SRC
+So =one= and =two= can be defined as:
+#+BEGIN_SRC scheme
+  (define one (lambda (f) (lambda (x) (f x))))
+  (define two (lambda (f) (lambda (x) (f (f x)))))
+#+END_SRC
+And =+= can be defined as:
+#+BEGIN_SRC scheme
+  (define (+ a b)
+    (lambda (f) (lambda (x)
+                  ((a f) ((b f) x)))))
+#+END_SRC
+The Church numerals can be converted to natural numbers with:
+#+BEGIN_SRC scheme
+  (((+ two one) inc) 0)
+  $99 = 3
+#+END_SRC
+** Exercise 2.7
+#+BEGIN_SRC scheme
+  (define lower-bound car)
+  (define upper-bound cdr)
+#+END_SRC
+** Exercise 2.8
+#+BEGIN_SRC scheme
+  (define (sub-interval x y)
+      (make-interval (- (lower-bound x) (upper-bound y))
+                     (- (upper-bound x) (lower-bound y))))
+  
+#+END_SRC
+** Exercise 2.9
+(a, b) + (c, d) = (a + c, b + d)
+
+width: 0.5 * ((b + d) - (c + a)) = 0.5 * ((b - a) + (c - d)) = width1 + width2
+
+(a, b) - (c, d) = (a - d, b - c)
+
+width: 0.5 * ((b - c) - (a - d)) = 0.5 * (b - c - a + d) = width1 + width2
+
+Multiplication of two intervals (a, b) and (c, d) can create any of
+the 8 combinations of ac, bc, ad, bd. For example, it is
+impossible for the width of (ac, ad) to be a function of the widths of
+the original two intervals.
+** Exercise 2.10
+#+BEGIN_SRC scheme
+  (define (div-interval x y)
+    (let ((low (lower-bound y))
+          (high (upper-bound y)))
+      (if (not (= (abs (* low high)) (* low high)))
+          (error "Cannot divide by an interval that spans 0.")
+          (mul-interval
+            x
+            (make-interval (/ 1.0 high)
+                           (/ 1.0 low))))))
+#+END_SRC
+** Exercise 2.11
+#+BEGIN_SRC scheme
+  (define (mul-interval x y)
+    (let ((xlow (lower-bound x))
+          (xup (upper-bound x))
+          (ylow (lower-bound y))
+          (yup (upper-bound y)))
+      (cond ((and (> xlow 0) (> ylow 0))
+             (make-interval (* xlow ylow) (* xup yup)))
+            ((and (< xup 0) (< yup 0))
+             (make-interval (* xup yup) (* xlow ylow)))
+            ((and (< xlow 0) (> xup 0) (> ylow 0))
+             (make-interval (* xlow yup) (* xup yup)))
+            ((and (> xlow 0) (< ylow 0) (> yup 0))
+             (make-interval (* xup ylow) (* xup yup)))
+            ((and (< xlow 0) (< xup 0) (> ylow 0))
+             (make-interval (* xlow yup) (* xup ylow)))
+            ((and (> xlow 0) (< ylow 0) (< yup 0))
+             (make-interval (* xup ylow) (* xlow yup)))
+            (else (make-interval (min (* xlow yup) (* ylow xup))
+                                 (max (* xup yup) (* xlow ylow)))))))
+#+END_SRC
+** Exercise 2.12
+#+BEGIN_SRC scheme
+  (define (make-center-percent center percent)
+    (let ((width (* center percent 0.01)))
+      (make-center-width center width)))
+  
+  (define (percent interval)
+    (* (/ (width interval) (center interval)) 100))
+#+END_SRC
+** Exercise 2.13 (NOT DONE)
+** Exercise 2.14
+#+BEGIN_EXAMPLE
+  (par1 (make-center-percent 35 0.1) (make-center-percent 50 0.2))
+  $28 = (20.493962530099257 . 20.68289047310434)
+  (par2 (make-center-percent 35 0.1) (make-center-percent 50 0.2))
+  $29 = (20.559164555470456 . 20.617296059200093)
+  
+  (define a (make-center-percent 30 0.1))
+  (define b (make-center-percent 60 0.5))
+  (div-interval a b)
+  $30 = (0.49701492537313435 . 0.5030150753768844)
+  (div-interval a a)
+  $31 = (0.9980019980019978 . 1.0020020020020022)
+#+END_EXAMPLE
+** Exercise 2.15
+This is correct. A/A should be equivalent to (1, 1). The fact that it
+isn't implies that using the same variable more than once increases
+the uncertainty unnecessarily.
+** Exercise 2.16
+See above. Any expression that uses the same interval twice will
+compound the uncertainty.
+
+It may be possible to build an interval-arithmetic package that works
+on the symbolic level, and rearranges all possible expressions to have
+the minimum amount of repetition of intervals. This would require
+delaying the actual computation until the entire expression has been
+input.
+** Exercise 2.17
+#+BEGIN_SRC scheme
+  (define (last-pair l)
+    (if (null? (cdr l))
+        l
+        (last-pair (cdr l))))
+#+END_SRC
+** Exercise 2.18
+#+BEGIN_SRC scheme
+  (define (reverse l)
+    (define (iter sub acc)
+      (if (null? sub)
+          acc
+          (iter (cdr sub) (cons (car sub) acc))))
+    (iter l '()))
+#+END_SRC
+** Exercise 2.19
+#+BEGIN_SRC scheme
+  (define first-denomination car)
+  
+  (define except-first-denomination cdr)
+  
+  (define no-more? null?)
+#+END_SRC
+The order of =coin-values= doesn't matter, since the procedure divides
+up the problem into subproblems based on the subsets of coins
+available, without considering order.
+** Exercise 2.20
+#+BEGIN_SRC scheme
+  (define (same-parity . x)
+    (if (null? x)
+        '()
+        (let ((right-type? (if (even? (car x))
+                               even?
+                               (lambda (x) (not (even? x))))))
+          (define (recurse sub)
+            (cond ((null? sub)
+                   sub)
+                  ((right-type? (car sub))
+                   (cons (car sub) (recurse (cdr sub))))
+                  (else
+                   (recurse (cdr sub)))))
+          (recurse x))))
+#+END_SRC
+** Exercise 2.21
+#+BEGIN_SRC scheme
+  (define (square-list items)
+    (if (null? items)
+        items
+        (cons (square (car items)) (square-list (cdr items)))))
+  
+  (define (square-list items)
+    (map square items))
+#+END_SRC
+** Exercise 2.22
+In the first buggy procedure, the list is built up in the second
+argument to iter by prepending each consecutive item. Since the list
+is traversed in order, the answer will be built in reverse order.
+
+The second program doesn't work because the list isn't built
+correctly. Lists are built by prepending an item to an existing
+list. The result here is built by prepending a list to an item.
+** Exercise 2.23
+#+BEGIN_SRC scheme
+  (define (for-each f l)
+    (cond ((null? l) #t)
+          (else (f (car l)) (for-each f (cdr l)))))
+#+END_SRC
+** Exercise 2.24
+#+BEGIN_EXAMPLE
+  (list 1 (list 2 (list 3 4)))
+  (1 (2 (3 4)))
+  
+  (1 (2 (3 4)))
+  |      |
+  1  (2 (3 4))
+      |   |
+      2 (3 4)
+         | |
+         3 4
+#+END_EXAMPLE
+** Exercise 2.25
+#+BEGIN_SRC scheme
+    (car (cdr (car (cdr (cdr (list 1 3 (list 5 7) 9)))))) ; 7
+    
+    (car (car (list (list 7)))) ; 7
+    
+    (car (car (cdr (car (cdr (car (cdr (car (cdr (car (cdr (car (cdr (list 1 (list 2 (list 3 (list 4 (list 5 (list 6 (list 7)))))))))))))))))))) ; 7
+#+END_SRC
+** Exercise 2.26
+#+BEGIN_EXAMPLE
+  (append x y)
+  $4 = (1 2 3 4 5 6)
+  (cons x y)
+  $5 = ((1 2 3) 4 5 6)
+  (list x y)
+  $6 = ((1 2 3) (4 5 6))
+#+END_EXAMPLE
+** Exercise 2.27
+#+BEGIN_SRC scheme
+  (define (deep-reverse t)
+    (cond ((null? t) t)
+          ((not (pair? t)) t)
+          (else (reverse (cons (deep-reverse (car t)) (deep-reverse (cdr t)))))))
+#+END_SRC
+** Exercise 2.28
+#+BEGIN_SRC scheme
+  (define (fringe t)
+    (cond ((null? t) (list))
+          ((not (pair? t)) (list t))
+          (else (append (fringe (car t)) (fringe (cdr t))))))
+#+END_SRC
+** Exercise 2.29
+*** Exercise 2.29a
+#+BEGIN_SRC scheme
+  (define left-branch car)
+  (define (right-branch m) (car (cdr m)))
+  (define branch-length car)
+  (define (branch-structure b) (car (cdr b)))
+#+END_SRC
+*** Exercise 2.29b
+#+BEGIN_SRC scheme
+  (define (total-weight m)
+    (if (not (pair? m))
+        m
+        (+ (total-weight (branch-structure (left-branch m)))
+           (total-weight (branch-structure (right-branch m))))))
+#+END_SRC
+*** Exercise 2.29c
+#+BEGIN_SRC scheme
+  (define (balanced? m)
+    (if (not (pair? m))
+        #t
+        (let ((left-m (branch-structure (left-branch m)))
+              (right-m (branch-structure (right-branch m))))
+          (and (balanced? left-m)
+               (balanced? right-m)
+               (= (* (branch-length (left-branch m)) (total-weight left-m))
+                  (* (branch-length (right-branch m)) (total-weight right-m)))))))
+#+END_SRC
+*** Exercise 2.29d
+Only the selectors need to be changed (since the internal
+representation has changed):
+#+BEGIN_SRC scheme
+  (define left-branch car)
+  (define right-branch cdr)
+  (define branch-length car)
+  (define branch-structure cdr)
+#+END_SRC
+** Exercise 2.30
+#+BEGIN_SRC scheme
+  (define (square-tree t)
+    (cond ((null? t) t)
+          ((not (pair? t)) (square t))
+          (else (cons (square-tree (car t)) (square-tree (cdr t))))))
+  
+  (define (square-tree t)
+    (map (lambda (x) (if (pair? x)
+                         (square-tree x)
+                         (square x)))
+         t))
+#+END_SRC
+** Exercise 2.31
+#+BEGIN_SRC scheme
+  (define (tree-map f t)
+    (map (lambda (x) (if (pair? x)
+                         (tree-map f x)
+                         (f x)))
+         t))
+#+END_SRC
+** Exercise 2.32
+#+BEGIN_SRC scheme
+  (define (subsets s)
+    (if (null? s)
+        (list '())
+        (let ((rest (subsets (cdr s))))
+          (append rest (map (lambda (x) (cons (car s) x)) rest)))))
+#+END_SRC
+This procedure makes use of the fact that sets are unordered, so it's
+easily possible to divide the problem into two while traversing the
+list: the subsets that contain an element $i$, and the subsets that
+don't. It's obvious that the former are just the latter with $i$ added
+to each subset.
+
+** Exercise 2.33
+#+BEGIN_SRC scheme
+  (define (map p sequence)
+    (accumulate (lambda (x y) (cons (p x) y)) '() sequence))
+  (define (append seq1 seq2)
+    (accumulate cons seq2 seq1))
+  (define (length sequence)
+    (accumulate (lambda (x y) (+ 1 y)) 0 sequence))
+#+END_SRC
+** Exercise 2.34
+#+BEGIN_SRC scheme
+  (define (horner-eval x coefficient-sequence)
+    (accumulate (lambda (this-coeff higher-terms)
+                  (+ this-coeff (* x higher-terms)))
+                0
+                coefficient-sequence))
+#+END_SRC
+** Exercise 2.35
+#+BEGIN_SRC scheme
+  (define (count-leaves t)
+    (accumulate + 0 (map (lambda (x) 1) (enumerate-tree t))))
+#+END_SRC
+** Exercise 2.36
+#+BEGIN_SRC scheme
+  (define (accumulate-n op init seqs)
+    (if (null? (car seqs))
+        '()
+        (cons (accumulate op init (map car seqs))
+              (accumulate-n op init (map cdr seqs)))))
+#+END_SRC
+** Exercise 2.37
+#+BEGIN_SRC scheme
+  (define (matrix-*-vector m v)
+    (map (lambda (x) (dot-product v x)) m))
+  (define (transpose mat)
+    (accumulate-n cons '() mat))
+  (define (matrix-*-matrix m n)
+    (let ((cols (transpose n)))
+      (map (lambda (x) (matrix-*-vector cols x)) m)))
+#+END_SRC
+** Exercise 2.38
+#+BEGIN_EXAMPLE
+  > (fold-right / 1 (list 1 2 3))
+  3/2
+  > (fold-left / 1 (list 1 2 3))
+  1/6
+  > (fold-right list nil (list 1 2 3))
+  '(1 (2 (3 ())))
+  > (fold-left list nil (list 1 2 3))
+  '(((() 1) 2) 3)
+#+END_EXAMPLE
+If =fold-right= and =fold-left= with procedure =p= produces the same
+value for any sequence, then =(p x y)= = =(p y x)=.
+** Exercise 2.39
+#+BEGIN_SRC scheme
+  (define (reverse sequence)
+    (fold-right (lambda (x y) (append y (list x))) '() sequence))
+  (define (reverse sequence)
+    (fold-left (lambda (x y) (cons y x)) '() sequence))
+#+END_SRC
+** Exercise 2.40
+#+BEGIN_SRC scheme
+  (define (unique-pairs n)
+    (flatmap (lambda (i)
+               (map (lambda (j) (cons i j)) (enumerate-interval 1 (- i 1))))
+               (enumerate-interval 1 n)))
+  
+  (define (prime-sum-pairs n)
+    (map make-pair-sum
+         (filter prime-sum? (unique-pairs n))))
+#+END_SRC
+** Exercise 2.41
+#+BEGIN_SRC scheme
+  (define (unique-trips n)
+    (flatmap (lambda (x)
+               (let ((i (car x))
+                     (j (cdr x)))
+                 (map (lambda (k)
+                        (cons i (cons j k)))
+                 (enumerate-interval 1 (- j 1)))))
+             (unique-pairs n)))
+  
+  (define (unique-trips-sum n sum)
+    (define (sum-trip t) (+ (car t) (cadr t) (cddr t)))
+    (filter (lambda (x)
+              (= (sum-trip x) sum))
+            (unique-trips n)))
+#+END_SRC
+** Exercise 2.42
+#+BEGIN_SRC scheme
+  ; "board" is just a list of (row, col) pairs
+  (define empty-board '())
+  
+  (define (adjoin-position new-row k rest-of-queens)
+    (cons (cons new-row k) rest-of-queens))
+  
+  ; k is not really necessary. Since the "board" can only really be used
+  ; by a k-queens program, these should all be defined in the queen-cols
+  ; procedure instead.
+  (define (safe? k positions)
+    (let ((row (car (car positions)))
+          (rest-of-queens (cdr positions)))
+      ; performance will suffer by not bailing out early
+      (= (length (filter (lambda (x)
+                           (let ((enemy-row (car x))
+                                 (enemy-col (cdr x)))
+                             (and (not (= enemy-row row))
+                                  (not (= enemy-col k))
+                                  (not (= (abs (- enemy-col k))
+                                          (abs (- enemy-row row)))))))
+                         rest-of-queens))
+         (length rest-of-queens))))
+#+END_SRC
+** Exercise 2.43
+The buggy procedure takes a long time to run because it is
+recalculating =(queen-cols (- k 1))= =n= times for every
+=k=. Asymptotically, this probably means the process has a runtime of
+$\Theta(n^n)$, where $n$ is the board size. The program will have a
+runtime of around $T^8$, although likely less.
+** Exercise 2.44
+#+BEGIN_SRC scheme
+  (define (up-split painter n)
+    (if (= n 0)
+        painter
+        (let ((smaller (up-split painter (- n 1))))
+          (below painter
+                 (beside smaller smaller)))))
+#+END_SRC
+** Exercise 2.45
+#+BEGIN_SRC scheme
+  (define (split op1 op2)
+    (define (recurse p n)
+      (if (= n 0)
+          p
+          (let ((smaller (recurse p (- n 1))))
+            (op1 p
+                 (op2 smaller smaller)))))
+    (lambda (p n) (recurse p n)))
+#+END_SRC
+** Exercise 2.46
+#+BEGIN_SRC scheme
+  (define (make-vect x y) (cons x y))
+  
+  (define xcor-vect car)
+  
+  (define ycor-vect cdr)
+  
+  (define (add-vect v1 v2)
+    (make-vect (+ (xcor-vect v1) (xcor-vect v2))
+               (+ (ycor-vect v1) (ycor-vect v2))))
+  
+  (define (sub-vect v1 v2)
+    (make-vect (- (xcor-vect v1) (xcor-vect v2))
+               (- (ycor-vect v1) (ycor-vect v2))))
+  
+  (define (scale-vect s v)
+    (make-vect (* (xcor-vect v) s)
+               (* (ycor-vect v) s)))
+#+END_SRC
+** Exercise 2.47
+#+BEGIN_SRC scheme
+  ; For first constructor
+  (define origin-frame car)
+  (define edge1-frame cadr)
+  (define edge2-frame caddr)
+  
+  ; For second constructor
+  (define origin-frame car)
+  (define edge1-frame cadr)
+  (define edge2-frame cddr)
+#+END_SRC
+** Exercise 2.48
+#+BEGIN_SRC scheme
+  (define (make-segment start end)
+    (cons start end))
+  
+  (define start-segment car)
+  (define end-segment cdr)
+#+END_SRC
+** Exercise 2.49
+#+BEGIN_SRC scheme
+  ; Using limits of exactly 1.0 draws outside the frame in the racket
+  ; sicp package
+  (define (outline f)
+      (define seg-list
+        (list (make-segment (make-vect 0 0) (make-vect 0 0.99))
+              (make-segment (make-vect 0 0.99) (make-vect 0.99 0.99))
+              (make-segment (make-vect 0.99 0.99) (make-vect 0.99 0))
+              (make-segment (make-vect 0.99 0) (make-vect 0 0))))
+      ((segments->painter seg-list) f))
+  
+  (define (draw-x f)
+    (define seg-list
+      (list (make-segment (make-vect 0 0) (make-vect 0.99 0.99))
+            (make-segment (make-vect 0 0.99) (make-vect 0.99 0))))
+    ((segments->painter seg-list) f))
+  
+  (define (diamond f)
+    (define seg-list
+      (list (make-segment (make-vect 0 0.5) (make-vect 0.5 0))
+            (make-segment (make-vect 0.5 0) (make-vect 0.99 0.5))
+            (make-segment (make-vect 0.99 0.5) (make-vect 0.5 0.99))
+            (make-segment (make-vect 0.5 0.99) (make-vect 0 0.5))))
+    ((segments->painter seg-list) f))
+  
+  ; i have better shit to do than to waste time with the wave painter
+#+END_SRC
+** Exercise 2.50
+#+BEGIN_SRC scheme
+  (define (flip-horiz painter)
+      (transform-painter painter
+                         (make-vect 1.0 0.0)
+                         (make-vect 0.0 0.0)
+                         (make-vect 1.0 1.0)))
+  
+  (define (rotate180 painter)
+    (transform-painter painter
+                       (make-vect 1.0 1.0)
+                       (make-vect 0.0 1.0)
+                       (make-vect 1.0 0.0)))
+  
+  (define (rotate270 painter)
+    (transform-painter painter
+                       (make-vect 0.0 1.0)
+                       (make-vect 0.0 0.0)
+                       (make-vect 1.0 1.0)))
+#+END_SRC
+** Exercise 2.51
+#+BEGIN_SRC scheme
+  (define (below p1 p2)
+    (lambda (frame)
+      ((transform-painter p1
+                          (make-vect 0.0 0.0)
+                          (make-vect 1.0 0.0)
+                          (make-vect 0.0 0.5))
+       frame)
+      ((transform-painter p2
+                          (make-vect 0.0 0.5)
+                          (make-vect 1.0 0.5)
+                          (make-vect 0.0 1.0))
+       frame)))
+  
+  (define (below p1 p2)
+    (lambda (frame)
+      ((rotate90 (beside (rotate270 p1) (rotate270 p2))) frame)))
+#+END_SRC
+** Exercise 2.52 (NOT DONE)
+** Exercise 2.53
+#+BEGIN_SRC scheme
+  (list ’a ’b ’c) ; (a b c)
+  (list (list ’george)) ; ((george))
+  (cdr ’((x1 x2) (y1 y2))) ; ((y1 y2))
+  (cadr ’((x1 x2) (y1 y2))) ; (y1 y2)
+  (pair? (car ’(a short list))) ; #f
+  (memq ’red ’((red shoes) (blue socks))) ; #f
+  (memq ’red ’(red shoes blue socks)) ; #t
+#+END_SRC
+** Exercise 2.54
+#+BEGIN_SRC scheme
+  (define (equal? l1 l2)
+    (cond ((pair? l1) (if (pair? l2)
+                          (and (equal? (car l1) (car l2))
+                               (equal? (cdr l1) (cdr l2)))
+                          #f))
+          (else (eq? l1 l2))))
+#+END_SRC
+** Exercise 2.55
+The interpreter expands =(car ''abracadabra)= to =(car (quote (quote
+abracadabra)))=. The first element of the pair given to car is the
+symbol (not the procedure) =quote=.
+** Exercise 2.56
+#+BEGIN_SRC scheme
+  (define (deriv exp var)
+    (cond ((number? exp) 0)
+          ((variable? exp) (if (same-variable? exp var) 1 0))
+          ((sum? exp) (make-sum (deriv (addend exp) var)
+                                (deriv (augend exp) var)))
+          ((product? exp)
+           (make-sum
+            (make-product (multiplier exp)
+                          (deriv (multiplicand exp) var))
+            (make-product (deriv (multiplier exp) var)
+                          (multiplicand exp))))
+          ((exponentiation? exp)
+           (make-product (exponent exp)
+                         (make-product (make-exponentiation
+                                        (base exp)
+                                        (make-sum (exponent exp) -1))
+                                       (deriv (base exp) var))))
+          (else
+           (error "unknown expression type: DERIV" exp))))
+  
+  (define (make-exponentiation base exponent)
+    (cond ((=number? exponent 0) 1)
+          ((=number? exponent 1) base)
+          (else (list '** base exponent))))
+  
+  (define (exponentiation? exp)
+    (and (symbol? (car exp)) (eq? (car exp) '**)))
+  
+  (define base cadr)
+  (define exponent caddr)
+#+END_SRC
+** Exercise 2.57
+#+BEGIN_SRC scheme
+  (define (augend exp)
+    (define (recurse sub)
+      (if (null? sub)
+        0
+        (make-sum (car sub) (recurse (cdr sub)))))
+    (recurse (cddr exp)))
+  
+  (define (multiplicand exp)
+    (define (recurse sub)
+      (if (null? sub)
+          1
+          (make-product (car sub) (recurse (cdr sub)))))
+    (recurse (cddr exp)))
+#+END_SRC
+** Exercise 2.58
+*** Exercise 2.58a
+#+BEGIN_SRC scheme
+  (define (make-sum a b)
+    (cond ((=number? a 0) b)
+          ((=number? b 0) a)
+          ((and (number? a) (number? b)) (+ a b))
+          (else (list a '+ b))))
+    
+  (define (sum? exp)
+    (and (symbol? (cadr exp)) (eq? (cadr exp) '+)))
+  
+  (define addend car)
+  
+  (define augend caddr)
+  
+  (define (make-product a b)
+    (cond ((or (=number? a 0) (=number? b 0)) 0)
+          ((=number? a 1) b)
+          ((=number? b 1) a)
+          ((and (number? a) (number? b)) (* a b))
+          (else (list a '* b))))
+  
+  (define (product? exp)
+    (and (symbol? (cadr exp)) (eq? (cadr exp) '*)))
+  
+  (define multiplier car)
+  
+  (define multiplicand caddr)
+#+END_SRC
+*** Exercise 2.58b
+#+BEGIN_SRC scheme
+  (define (pre op exp)
+    (define (iter sub acc)
+             (cond ((null? sub) (error "No op in list" op exp))
+                   ((eq? (car sub) op) acc)
+                   (else (iter (cdr sub) (cons (car sub) acc)))))
+    (let ((result (iter exp '())))
+      (if (= (length result) 1)
+          (car result)
+          result)))
+  
+  (define (post op exp)
+    (define (iter sub acc found-op)
+      (cond ((and (null? sub) (not found-op))
+             (error "No op in list" op exp))
+            ((null? sub) acc)
+            ((and (eq? (car sub) op) (not found-op)) (iter (cdr sub) acc #t))
+            ((not found-op) (iter (cdr sub) acc #f))
+            (else (iter (cdr sub) (cons (car sub) acc) #t))))
+    (let ((result (iter exp '() #f)))
+      (if (= (length result) 1)
+          (car result)
+          result)))
+  
+  (define (make-sum a b)
+    (cond ((=number? a 0) b)
+          ((=number? b 0) a)
+          ((and (number? a) (number? b)) (+ a b))
+          (else (list a '+ b))))
+  
+  (define (sum? exp) (memq '+ exp))
+  
+  (define (addend exp) (pre '+ exp))
+  
+  (define (augend exp) (post '+ exp))
+  
+  (define (make-product a b)
+    (cond ((or (=number? a 0) (=number? b 0)) 0)
+          ((=number? a 1) b)
+          ((=number? b 1) a)
+          ((and (number? a) (number? b)) (* a b))
+          (else (list a '* b))))
+  
+  (define (product? exp)
+    (and (not (memq '+ exp)) (memq '* exp)))
+  
+  (define (multiplier exp) (pre '* exp))
+  
+  (define (multiplicand exp) (post '* exp))
+#+END_SRC
+** Exercise 2.59
+#+BEGIN_SRC scheme
+  (define (union-set s1 s2)
+    (cond ((null? s1) s2)
+          ((element-of-set? (car s1) s2)
+           (union-set (cdr s1) s2))
+          (else (cons (car s1) (union-set (cdr s1) s2)))))
+#+END_SRC
+** Exercise 2.60
+#+BEGIN_SRC scheme
+  ; element-of-set is exactly the same
+  
+  (define adjoin-set cons)
+  
+  (define union-set append)
+  
+  ; intersection-set is exactly the same
+#+END_SRC
+
+The efficiency of =element-of-set?= and =intersection-set= remains the
+same (\(\Theta(n)\) and \(\Theta(n^2)\) respectively). =union-set= and
+=adjoin-set= improve to \(\Theta(n)\) and \(\Theta(1)\)
+respectively. Obviously, though, the overall size of the list is
+usually larger when duplicates are allowed. This representation would
+work well if working with mainly disjoint sets, or if the program
+constructs very large sets by adjoining members one by one.
+** Exercise 2.61
+#+BEGIN_SRC scheme
+  (define (adjoin-set x set)
+    (cond ((null? set) (cons x set))
+          ((< x (car set)) (cons x set))
+          ((= x (car set)) set)
+          (else (cons (car set) (adjoin-set x (cdr set))))))
+#+END_SRC
+** Exercise 2.62
+#+BEGIN_SRC scheme
+  (define (union-set s1 s2)
+    (cond ((null? s1) s2)
+          ((null? s2) s1)
+          (else 
+           (let ((c1 (car s1))
+                 (c2 (car s2)))
+             (cond 
+              ((= c1 c2) (cons c1 (union-set (cdr s1) (cdr s2))))
+              ((< c1 c2) (cons c1 (union-set (cdr s1) s2)))
+              (else (cons c2 (union-set s1 (cdr s2)))))))))
+#+END_SRC
+** Exercise 2.63
+*** 2.63a
+Both procedures will give exactly the same result for any tree.
+*** 2.63b
+=tree->list-1= takes \(\Theta(n\log(n))\) time (since =append= is
+\(\Theta(n)\)), and =tree->list-2= takes \(\Theta(n)\) time, since it
+traverses the tree in an order that avoids traversing an element in
+the final list more than once.
+** Exercise 2.64
+*** 2.64a
+=partial-tree= picks a pivot halfway into the list, splits the list
+into half on the pivot, and makes a tree from the pivot (which becomes
+the "entry") and two child trees. Those child trees are just the
+results of running =partial-tree= on the left and right halves of the
+list.
+*** 2.64b
+The order of growth is \(\Theta(n)\). All operations are constant-time
+except for =partial-tree= and =length=, and =partial-tree= is only run
+once for every node in the tree.
+** Exercise 2.65
+#+BEGIN_SRC scheme
+  ; from Exercise 2.62
+  (define (union-set-list s1 s2)
+    (cond ((null? s1) s2)
+          ((null? s2) s1)
+          (else 
+           (let ((c1 (car s1))
+                 (c2 (car s2)))
+             (cond 
+              ((= c1 c2) (cons c1 (union-set-list (cdr s1) (cdr s2))))
+              ((< c1 c2) (cons c1 (union-set-list (cdr s1) s2)))
+              (else (cons c2 (union-set-list s1 (cdr s2)))))))))
+  
+  ; new code
+  (define (intersection-set-list s1 s2)
+    (cond ((null? s1) s1)
+          ((null? s2) s2)
+          (else
+           (let ((c1 (car s1))
+                 (c2 (car s2)))
+             (cond
+              ((= c1 c2) (cons c1 (intersection-set-list (cdr s1) (cdr s2))))
+              ((< c1 c2) (intersection-set-list (cdr s1) s2))
+              (else (intersection-set-list s1 (cdr s2))))))))
+  (define (intersection-set-tree s1 s2)
+    (list->tree (intersection-set-list (tree->list-2 s1) (tree->list-2 s2))))
+  (define (union-set-tree s1 s2)
+    (list->tree (union-set-list (tree->list-2 s1) (tree->list-2 s2))))  
+#+END_SRC
+All the operations involved are \(\Theta(n)\), so both
+=intersection-set-tree= and =union-set-tree= are \(\Theta(n)\).
+** Exercise 2.66
+#+BEGIN_SRC scheme
+  (define (make-record key value left-branch right-branch)
+    (list key value left-branch right-branch))
+  (define (get-value record) (cadr record))
+  (define (get-left-branch record) (caddr record))
+  (define (get-right-branch record) (cadddr record))
+  (define (get-key record) (car record))
+  
+  (define (lookup key record)
+    (cond ((null? record) #f)
+          ((= (get-key record) key) (get-value record))
+          ((< (get-key record) key) (lookup key (get-right-branch record)))
+          (else (lookup key (get-left-branch record)))))
+#+END_SRC
+** Exercise 2.67
+ADABBCA
+** Exercise 2.68
+#+BEGIN_SRC scheme
+  (define (encode-symbol symbol tree)
+    (if (leaf? tree) '()
+        (let ((l (left-branch tree))
+              (r (right-branch tree)))
+              (let ((meml (memq symbol (symbols l)))
+                    (memr (memq symbol (symbols r))))
+                (cond ((and (not meml) (not memr)) (error "symbol not found in tree:" symbol))
+                      ((not meml) (cons 1 (encode-symbol symbol r)))
+                      (else (cons 0 (encode-symbol symbol l))))))))
+#+END_SRC
+** Exercise 2.69
+#+BEGIN_SRC scheme
+  (define (successive-merge node-set)
+    (if (= (length node-set) 1) (car node-set)
+        (let ((node1 (car node-set))
+              (node2 (cadr node-set)))
+          (successive-merge (adjoin-set (make-code-tree node1 node2)
+                                        (cddr node-set))))))
+#+END_SRC
+** Exercise 2.70
+#+BEGIN_EXAMPLE
+  7> (encode '(get a job sha na na na na na na na na get a job sha na na na na na na na na wah yip yip yip yip yip yip yip yip yip sha boom) (generate-huffman-tree '((a 2) (get 2) (sha 3) (wah 1) (boom 1) (job 2) (na 16) (yip 9))))
+  (1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   1
+   1
+   1
+   1
+   0
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   1
+   1
+   1
+   1
+   0
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   0
+   1
+   1
+   1
+   0
+   1
+   0
+   1
+   0
+   1
+   0
+   1
+   0
+   1
+   0
+   1
+   0
+   1
+   0
+   1
+   0
+   1
+   1
+   1
+   0
+   1
+   1
+   0
+   1
+   0)  
+#+END_EXAMPLE
+It requires 84 bits to encode the message using the Huffman tree,
+vs. at least 108 using a fixed-string alphabet.
+** Exercise 2.71
+In newick format, for \(n = 5\):
+
+=(16, (8, (4, (1, 2))))=
+
+For \(n = 10\):
+
+=(512, (256, (128, (64, (32, (16, (8, (4, (2, 1)))))))))=
+
+For this type of tree, only one tree is required to encode the most
+frequent symbol, and $n - 1$ are required to compute the least
+frequent.
+** Exercise 2.72
+For the special case where the frequencies are distributed as in
+Exercise 2.71, the steps needed to encode the least frequent symbol is
+\(\Theta(n^2)\), while for the most frequent it is \(\Theta(n)\),
+where $n$ is the number of symbols in the alphabet.
+
+This allows us to place worst- and best-case bounds on the growth in
+time needed to encode a symbol. The worst-case, is \(\Theta(n^2)\),
+while the best-case is \(\Theta(n)\).
+** Exercise 2.73
+*** 2.73a
+In this specific case, numbers and variables don't have type tags, so
+they can't have a dispatch for ='deriv=.
+*** 2.73b
+#+BEGIN_SRC scheme
+  (define install-sum-and-product-derivs
+    (define (sum-deriv exp var)
+        (make-sum (deriv (addend exp) var) (deriv (augend exp) var)))
+    (define (prod-deriv exp var)
+      (make-sum (make-product (multiplier exp) (deriv (multiplicant exp) var))
+                (make-product (multiplicand exp) (deriv (multiplier exp) var))))
+    (put 'deriv '+ sum-deriv)
+    (put 'deriv '* prod-deriv))
+#+END_SRC
+*** 2.73c
+#+BEGIN_SRC scheme
+  (define (install-exp-deriv)
+    (define (exp-deriv exp var)
+      (make-product (exponent exp)
+                    (make-product (make-exponentiation
+                                   (base exp)
+                                   (make-sum (exponent exp) -1))
+                                  (deriv (base exp) var))))
+    (put 'deriv '^ exp-deriv))
+#+END_SRC
+*** 2.73d
+All =put= calls must be flipped as well, e.g. =(put '+ 'deriv
+sum-deriv)= instead of =(put 'deriv '+ sum-deriv)=.
+** Exercise 2.74
+*** 2.74a
+#+BEGIN_SRC scheme
+  (define (get-record name file)
+    (apply-generic 'get-record name file))
+#+END_SRC
+The division's files can be structured any way they want, as long as
+they supply a dispatch for ='get-record= for the specific name type
+and file type.
+*** 2.74b
+#+BEGIN_SRC scheme
+  (define (get-salary record)
+    (apply-generic 'get-salary record))
+#+END_SRC
+Again, the division's records can be structured any way they wish, as
+long as they provide a dispatch for the ='get-salary= symbol.
+*** 2.74c
+#+BEGIN_SRC scheme
+  (define (find-employee-record name files)
+    (if (null? files) '()
+        (let ((result (get-record name (car files))))
+          (if (null? result) (find-employee-record name (cdr files))
+              result))))
+#+END_SRC
+*** 2.74d
+They should just add a new dispatch for the relevant queries. No
+changes to the company's already existing data structures should be
+needed.
+** Exercise 2.75
+#+BEGIN_SRC scheme
+  (define (make-from-mag-ang mag ang)
+    (define (dispatch op)
+      (cond ((eq? op 'real-part) (* mag (cos ang)))
+            ((eq? op 'imag-part) (* mag (sin ang)))
+            ((eq? op 'magnitude) mag)
+            ((eq? op 'angle) ang)
+            (else (error "Unknown op: make-from-mag-ang" op))))
+    dispatch)
+#+END_SRC
+** Exercise 2.76
+To add a new type:
+- explicit dispatch must modify all methods to account for the new type
+- data-directed programming adds a single "package" for the new type
+- message-passing style adds a new constructor for the new type
+
+To add a new method:
+- explicit dispatch adds the new method, accounting for the existing types
+- data-directed programming must change every package to add the new method
+- message-passing style must change every constructor to add the new method
+
+If new types are often added, data-directed programming or
+message-passing style is likely the best option. If new methods are
+often added, then explicit dispatch is the best choice.
+** Exercise 2.77
+=apply-generic= is invoked twice for a call to =magnitude=. First, the
+=magnitude= entry for the =complex= type is run. Then, that runs
+=magnitude= for the =polar= or =complex= type.
+** Exercise 2.78
+#+BEGIN_SRC scheme
+  (define (attach-tag type-tag contents)
+    (if (number? contents)
+        contents
+        (cons type-tag contents)))
+  (define (type-tag datum)
+    (cond ((pair? datum) (car datum))
+          ((number? datum) datum)
+          (else (error "Bad tagged datum: TYPE-TAG" datum))))
+  (define (contents datum)
+    (cond ((pair? datum) (cdr datum))
+          ((number? datum) datum)
+          (else (error "Bad tagged datum: CONTENTS" datum))))
+#+END_SRC
