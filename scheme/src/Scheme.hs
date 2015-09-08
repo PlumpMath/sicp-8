@@ -62,14 +62,18 @@ unparse (Leaf atom) = case atom of
   String s -> "\"" <> s <> "\""
   Quoted s -> "'" <> s
 
+parseSpaces :: P.Parser String
+parseSpaces = many P.space
+
 parseAST :: P.Parser AST
-parseAST = parseQuotedSexp <|> parseSexp <|> parseLeaf
+parseAST = parseSpaces *> (parseQuotedSexp <|> parseSexp <|> parseLeaf)
 
 parseQuotedSexp :: P.Parser AST
 parseQuotedSexp = do
   _ <- P.char '\''
   _ <- P.char '('
   asts <- parseAST `P.sepBy` P.space
+  _ <- parseSpaces
   _ <- P.char ')'
   return $ QuotedSexp asts
 
@@ -77,11 +81,13 @@ parseSexp :: P.Parser AST
 parseSexp = do
   _ <- P.char '('
   asts <- parseAST `P.sepBy` P.space
+  _ <- parseSpaces
   _ <- P.char ')'
   return $ Sexp asts
 
 parseLeaf :: P.Parser AST
-parseLeaf = Leaf <$> (parseFloat <|> parseInt <|> parseQuoted <|> parseString <|> parseSymbol)
+parseLeaf = Leaf <$> (parseSpaces *> (parseFloat <|> parseInt <|> parseQuoted
+                                      <|> parseString <|> parseSymbol))
 
 parseInt :: P.Parser Atom
 parseInt = do
