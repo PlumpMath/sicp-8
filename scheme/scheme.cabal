@@ -55,14 +55,11 @@ executable scheme
   
   -- Other library packages from which modules are imported.
   build-depends: base
-                        , test-framework
-                        , test-framework-hunit
-                        , test-framework-quickcheck2
-                        , HUnit
-                        , QuickCheck
-                        , bytestring
-                        , attoparsec
-  
+               , QuickCheck
+               , bytestring
+               , attoparsec
+               , readline
+
   -- Directories containing source files.
   -- hs-source-dirs:      
   

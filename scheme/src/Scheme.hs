@@ -1,4 +1,5 @@
 module Scheme where
+import Prelude hiding (exponent)
 import Data.Monoid
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Attoparsec.ByteString.Char8 as P
@@ -125,7 +126,8 @@ parseQuoted = do
   str <- P.takeTill (P.inClass "() ")
   return $ Quoted $ B.unpack str
 
-parse :: String -> Maybe AST
-parse s = case (P.parseOnly parseAST . B.pack) s of
-  Left _ -> Nothing
-  Right ast -> Just ast
+parse :: String -> Either String AST
+parse = P.parseOnly parseAST . B.pack
+
+evaluate :: AST -> AST
+evaluate = id
